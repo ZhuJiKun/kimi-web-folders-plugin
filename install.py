@@ -284,7 +284,36 @@ def patch_web_api_sessions(base: Path) -> None:
     new1b = "    sessions = load_sessions_page(limit=limit, offset=offset, query=q, archived=archived, folder_id=folder_id)\n"
     text = replace_exact(text, old1b, new1b, path.name)
 
-    # 2. update_session folder_id handling
+    # 2. update_session: skip busy check for folder-only changes
+    old1c = (
+        "    session = get_editable_session(session_id, runner)\n"
+        "    session_dir = session.kimi_cli_session.dir\n"
+        "    state = load_session_state(session_dir)\n\n"
+        "    # Update title if provided\n"
+    )
+    new1c = (
+        "    session = load_session_by_id(session_id)\n"
+        "    if session is None:\n"
+        '        raise HTTPException(\n'
+        "            status_code=status.HTTP_404_NOT_FOUND,\n"
+        '            detail="Session not found",\n'
+        "        )\n"
+        "    session_dir = session.kimi_cli_session.dir\n"
+        "    state = load_session_state(session_dir)\n\n"
+        "    # Only enforce busy check for stateful modifications (title, archived).\n"
+        "    # Folder-only changes should not block on busy sessions.\n"
+        "    if request.title is not None or request.archived is not None:\n"
+        "        session_process = runner.get_session(session_id)\n"
+        "        if session_process and session_process.is_busy:\n"
+        '            raise HTTPException(\n'
+        "                status_code=status.HTTP_400_BAD_REQUEST,\n"
+        '                detail="Session is busy. Please wait for it to complete before modifying.",\n'
+        "            )\n\n"
+        "    # Update title if provided\n"
+    )
+    text = replace_exact(text, old1c, new1c, path.name)
+
+    # 3. update_session folder_id handling
     old2 = (
         "    # Update archived status if provided\n"
         "    if request.archived is not None:\n"
