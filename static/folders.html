@@ -141,14 +141,6 @@
     const authToken = urlParams.get('token') || '';
     let currentTheme = urlParams.get('theme') || localStorage.getItem('kimi-folders-theme') || 'dark';
 
-    function applyTheme(t) {
-      document.documentElement.setAttribute('data-theme', t);
-      localStorage.setItem('kimi-folders-theme', t);
-      if (themeBtn) themeBtn.textContent = t === 'dark' ? '☀️' : '🌙';
-    }
-
-    applyTheme(currentTheme);
-
     const themeBtn = document.createElement('button');
     themeBtn.id = 'theme-toggle';
     themeBtn.title = '切换主题';
@@ -157,6 +149,13 @@
       applyTheme(currentTheme);
     };
     document.body.appendChild(themeBtn);
+
+    function applyTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('kimi-folders-theme', t);
+      if (themeBtn) themeBtn.textContent = t === 'dark' ? '☀️' : '🌙';
+    }
+
     applyTheme(currentTheme);
 
     // Fix back-link to carry token

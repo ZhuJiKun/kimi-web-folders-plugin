@@ -406,8 +406,8 @@ def patch_index_html(base: Path) -> None:
     path = base / "web" / "static" / "index.html"
     text = path.read_text(encoding="utf-8")
 
-    # Already has the latest injected script
-    if "kimi-folder-float" in text:
+    # Check if already has the latest patch (contains backgroundColor detection)
+    if "kimi-folder-float" in text and "bodyBg" in text:
         ok("web/static/index.html already has latest patch (skipped)")
         return
 
@@ -444,14 +444,20 @@ def patch_index_html(base: Path) -> None:
         '      var token = new URLSearchParams(location.search).get("token") || "";\n'
         '      var theme = "dark";\n'
         '      try {\n'
-        '        var html = document.documentElement;\n'
-        '        if (html.classList.contains("light") || html.getAttribute("data-theme") === "light") theme = "light";\n'
-        '        else if (html.classList.contains("dark") || html.getAttribute("data-theme") === "dark") theme = "dark";\n'
-        '        else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) theme = "light";\n'
-        '        var ls = localStorage.getItem("theme") || localStorage.getItem("kimi-theme") || localStorage.getItem("color-theme");\n'
-        '        if (ls) theme = ls;\n'
+        '        var bodyBg = window.getComputedStyle(document.body).backgroundColor;\n'
+        '        if (!bodyBg || bodyBg === "rgba(0, 0, 0, 0)" || bodyBg === "transparent") {\n'
+        '          bodyBg = window.getComputedStyle(document.documentElement).backgroundColor;\n'
+        '        }\n'
+        '        if (bodyBg) {\n'
+        '          var rgb = bodyBg.match(/\\d+/g);\n'
+        '          if (rgb && rgb.length >= 3) {\n'
+        '            var brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;\n'
+        '            theme = brightness > 180 ? "light" : "dark";\n'
+        '          }\n'
+        '        } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {\n'
+        '          theme = "light";\n'
+        '        }\n'
         '      } catch(e){}\n'
-        '      var el = document.getElementById("kimi-folder-link");\n'
         '      if (el) {\n'
         '        var url = "./folders.html?theme=" + encodeURIComponent(theme);\n'
         '        if (token) url += "&token=" + encodeURIComponent(token);\n'
