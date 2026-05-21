@@ -139,7 +139,7 @@
     // Theme handling
     const urlParams = new URLSearchParams(window.location.search);
     const authToken = urlParams.get('token') || '';
-    let currentTheme = urlParams.get('theme') || localStorage.getItem('kimi-folders-theme') || 'dark';
+    let currentTheme = localStorage.getItem('kimi-folders-theme') || 'dark';
 
     const themeBtn = document.createElement('button');
     themeBtn.id = 'theme-toggle';
@@ -161,11 +161,7 @@
     // Fix back-link to carry token
     const backLink = document.getElementById('back-link');
     if (backLink && authToken) {
-      let backUrl = './';
-      const backTheme = urlParams.get('theme');
-      if (backTheme) backUrl += '?theme=' + encodeURIComponent(backTheme);
-      if (authToken) backUrl += (backUrl.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(authToken);
-      backLink.href = backUrl;
+      backLink.href = './?token=' + encodeURIComponent(authToken);
     }
 
     // State

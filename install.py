@@ -435,9 +435,9 @@ def patch_index_html(base: Path) -> None:
     path = base / "web" / "static" / "index.html"
     text = path.read_text(encoding="utf-8")
 
-    # Check if already has the latest patch (contains backgroundColor detection)
-    if "kimi-folder-float" in text and "bodyBg" in text:
-        ok("web/static/index.html already has latest patch (skipped)")
+    # Check if already has the latest patch
+    if "kimi-folder-float" in text and "bodyBg" not in text:
+        ok("web/static/index.html already patched (skipped)")
         return
 
     # Remove old MutationObserver script if present
@@ -453,18 +453,19 @@ def patch_index_html(base: Path) -> None:
             text = text[:start] + text[end:]
             ok("Removed old observer script from index.html")
 
-    # Remove old floating button if present
-    old_float = (
+    # Remove old floating button if present (any version without bodyBg)
+    old_float_simple = (
         '    <!-- Folder management quick entry -->\n'
         '    <a href="./folders.html" id="kimi-folder-link" title="会话文件夹管理" style="position:fixed;bottom:16px;right:16px;z-index:9999;width:44px;height:44px;border-radius:50%;background:#58a6ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform .2s,background .2s;">📁</a>\n'
         "    <style>#kimi-folder-link:hover{transform:scale(1.1);background:#79b8ff}</style>\n"
         "    <script>(function(){var t=new URLSearchParams(location.search).get('token');var el=document.getElementById('kimi-folder-link');if(el&&t)el.href='./folders.html?token='+encodeURIComponent(t);})();</script>\n"
     )
-    if old_float in text:
-        text = text.replace(old_float, "")
+    if old_float_simple in text:
+        text = text.replace(old_float_simple, "")
         ok("Removed old floating button from index.html")
 
-    new_script = (
+    # Remove theme-sync version if present
+    old_float_theme = (
         '    <!-- Folder management quick entry -->\n'
         '    <a href="./folders.html" id="kimi-folder-link" title="会话文件夹管理" style="position:fixed;bottom:80px;right:16px;z-index:9999;width:44px;height:44px;border-radius:50%;background:#58a6ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform .2s,background .2s;">📁</a>\n'
         "    <style>#kimi-folder-link:hover{transform:scale(1.1);background:#79b8ff}</style>\n"
@@ -487,10 +488,29 @@ def patch_index_html(base: Path) -> None:
         '          theme = "light";\n'
         '        }\n'
         '      } catch(e){}\n'
+        '      var el = document.getElementById("kimi-folder-link");\n'
         '      if (el) {\n'
         '        var url = "./folders.html?theme=" + encodeURIComponent(theme);\n'
         '        if (token) url += "&token=" + encodeURIComponent(token);\n'
         '        el.href = url;\n'
+        '      }\n'
+        '    })();\n'
+        '    </script>\n'
+    )
+    if old_float_theme in text:
+        text = text.replace(old_float_theme, "")
+        ok("Removed theme-sync button from index.html")
+
+    new_script = (
+        '    <!-- Folder management quick entry -->\n'
+        '    <a href="./folders.html" id="kimi-folder-link" title="会话文件夹管理" style="position:fixed;bottom:80px;right:16px;z-index:9999;width:44px;height:44px;border-radius:50%;background:#58a6ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform .2s,background .2s;">📁</a>\n'
+        "    <style>#kimi-folder-link:hover{transform:scale(1.1);background:#79b8ff}</style>\n"
+        '    <script id="kimi-folder-float">\n'
+        '    (function(){\n'
+        '      var token = new URLSearchParams(location.search).get("token") || "";\n'
+        '      var el = document.getElementById("kimi-folder-link");\n'
+        '      if (el && token) {\n'
+        '        el.href = "./folders.html?token=" + encodeURIComponent(token);\n'
         '      }\n'
         '    })();\n'
         '    </script>\n'
