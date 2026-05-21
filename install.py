@@ -406,28 +406,91 @@ def patch_index_html(base: Path) -> None:
     path = base / "web" / "static" / "index.html"
     text = path.read_text(encoding="utf-8")
 
-    # Make sure we only patch the vanilla index.html, not an already patched one
-    if "kimi-folder-link" in text:
-        ok("web/static/index.html already patched (skipped)")
+    # Already has the latest injected script
+    if "kimi-folder-observer" in text:
+        ok("web/static/index.html already has latest patch (skipped)")
         return
 
-    old = (
-        "  <body>\n"
-        '    <div id="root"></div>\n'
-        "  </body>\n"
-        "</html>\n"
-    )
-    new = (
-        "  <body>\n"
-        '    <div id="root"></div>\n'
-        "    <!-- Folder management quick entry -->\n"
+    # Remove old floating button if present
+    old_float = (
+        '    <!-- Folder management quick entry -->\n'
         '    <a href="./folders.html" id="kimi-folder-link" title="会话文件夹管理" style="position:fixed;bottom:16px;right:16px;z-index:9999;width:44px;height:44px;border-radius:50%;background:#58a6ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform .2s,background .2s;">📁</a>\n'
         "    <style>#kimi-folder-link:hover{transform:scale(1.1);background:#79b8ff}</style>\n"
         "    <script>(function(){var t=new URLSearchParams(location.search).get('token');var el=document.getElementById('kimi-folder-link');if(el&&t)el.href='./folders.html?token='+encodeURIComponent(t);})();</script>\n"
-        "  </body>\n"
-        "</html>\n"
     )
-    text = replace_exact(text, old, new, path.name)
+    if old_float in text:
+        text = text.replace(old_float, "")
+        ok("Removed old floating button from index.html")
+
+    new_script = (
+        '    <script id="kimi-folder-observer">\n'
+        '    (function(){\n'
+        '      var token = new URLSearchParams(location.search).get("token") || "";\n'
+        '      var theme = "dark";\n'
+        '      try {\n'
+        '        var html = document.documentElement;\n'
+        '        if (html.classList.contains("light") || html.getAttribute("data-theme") === "light") theme = "light";\n'
+        '        else if (html.classList.contains("dark") || html.getAttribute("data-theme") === "dark") theme = "dark";\n'
+        '        else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) theme = "light";\n'
+        '        var ls = localStorage.getItem("theme") || localStorage.getItem("kimi-theme") || localStorage.getItem("color-theme");\n'
+        '        if (ls) theme = ls;\n'
+        '      } catch(e){}\n'
+        '      function insertBtn() {\n'
+        '        var candidates = document.querySelectorAll(\'header, nav, [class*="header"], [class*="toolbar"], [class*="top"]\');\n'
+        '        var target = null;\n'
+        '        for (var i=0;i<candidates.length;i++){\n'
+        '          var c=candidates[i];\n'
+        '          var rect=c.getBoundingClientRect();\n'
+        '          if (rect.top<100 && rect.right > window.innerWidth*0.6){\n'
+        '            var children=c.querySelectorAll("div,span,button,a");\n'
+        '            for (var j=0;j<children.length;j++){\n'
+        '              var ch=children[j];\n'
+        '              var txt=ch.textContent||"";\n'
+        '              if (txt.indexOf("Open")!==-1 || txt.indexOf("/")!==-1 || ch.tagName==="BUTTON" || ch.tagName==="A"){\n'
+        '                target = ch.parentElement;\n'
+        '                break;\n'
+        '              }\n'
+        '            }\n'
+        '            if (target) break;\n'
+        '          }\n'
+        '        }\n'
+        '        if (!target){\n'
+        '          var all=document.querySelectorAll("div,nav,header"); \n'
+        '          for (var i=0;i<all.length;i++){\n'
+        '            var r=all[i].getBoundingClientRect(); \n'
+        '            if (r.top<60 && r.left>window.innerWidth*0.5 && r.width>100 && r.height<80){target=all[i]; break;}\n'
+        '          }\n'
+        '        }\n'
+        '        if (!target) return false;\n'
+        '        if (target.querySelector("#kimi-folder-link")) return true;\n'
+        '        var link=document.createElement("a");\n'
+        '        link.id="kimi-folder-link";\n'
+        '        link.title="会话文件夹管理";\n'
+        '        var url="./folders.html?theme="+encodeURIComponent(theme);\n'
+        '        if (token) url += "&token="+encodeURIComponent(token);\n'
+        '        link.href=url;\n'
+        '        link.textContent="📁";\n'
+        '        link.style.cssText="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:rgba(88,166,255,0.15);color:#58a6ff;font-size:16px;text-decoration:none;margin-right:8px;transition:background .2s;cursor:pointer;";\n'
+        '        link.onmouseover=function(){link.style.background="rgba(88,166,255,0.3)";};\n'
+        '        link.onmouseout=function(){link.style.background="rgba(88,166,255,0.15)";};\n'
+        '        target.insertBefore(link, target.firstChild);\n'
+        '        return true;\n'
+        '      }\n'
+        '      if (insertBtn()) return;\n'
+        '      var observer=new MutationObserver(function(){ if(insertBtn()) observer.disconnect(); });\n'
+        '      observer.observe(document.body, {childList:true, subtree:true});\n'
+        '    })();\n'
+        '    </script>\n'
+    )
+
+    old_body_end = "  </body>\n</html>\n"
+    new_body_end = new_script + "  </body>\n</html>\n"
+
+    if old_body_end not in text:
+        fail("Cannot patch index.html: expected </body> structure not found")
+
+    text = text.replace(old_body_end, new_body_end, 1)
+
     if write_if_changed(path, text):
         ok("Patched web/static/index.html")
     else:

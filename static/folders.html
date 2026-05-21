@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,18 +15,34 @@
       --text-muted: #8b949e;
       --accent: #58a6ff;
       --accent-hover: #79b8ff;
+      --accent-bg: rgba(88,166,255,0.12);
       --danger: #f85149;
       --danger-hover: #ff7b72;
       --success: #3fb950;
       --radius: 8px;
       --shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --bg-elevated: #f6f8fa;
+      --bg-hover: #f3f4f6;
+      --border: #d0d7de;
+      --text: #24292f;
+      --text-muted: #57606a;
+      --accent: #0969da;
+      --accent-hover: #0550ae;
+      --accent-bg: rgba(9,105,218,0.08);
+      --danger: #cf222e;
+      --danger-hover: #a40e26;
+      --success: #1a7f37;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; transition: background .3s, color .3s; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .layout { display: flex; height: 100vh; overflow: hidden; }
-    .sidebar { width: 280px; min-width: 280px; background: var(--bg-elevated); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .sidebar { width: 280px; min-width: 280px; background: var(--bg-elevated); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: background .3s, border-color .3s; }
     .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .sidebar-header h2 { margin: 0; font-size: 16px; }
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-hover); color: var(--text); cursor: pointer; font-size: 13px; transition: background .15s; }
@@ -37,22 +53,22 @@
     .btn-danger:hover { background: var(--danger); color: #fff; }
     .btn-sm { padding: 4px 8px; font-size: 12px; }
     .folder-list { flex: 1; overflow-y: auto; padding: 8px; }
-    .folder-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: var(--radius); cursor: pointer; gap: 8px; }
+    .folder-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: var(--radius); cursor: pointer; gap: 8px; transition: background .15s; }
     .folder-item:hover { background: var(--bg-hover); }
-    .folder-item.active { background: rgba(88,166,255,0.12); outline: 1px solid rgba(88,166,255,0.35); }
+    .folder-item.active { background: var(--accent-bg); outline: 1px solid var(--accent); }
     .folder-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
-    .folder-count { font-size: 12px; color: var(--text-muted); background: var(--bg); padding: 2px 8px; border-radius: 999px; }
+    .folder-count { font-size: 12px; color: var(--text-muted); background: var(--bg); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
     .folder-actions { display: none; gap: 4px; }
     .folder-item:hover .folder-actions, .folder-item.active .folder-actions { display: flex; }
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .main-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .main-header h1 { margin: 0; font-size: 18px; }
     .main-body { flex: 1; overflow-y: auto; padding: 20px; }
-    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
-    .search { flex: 1; max-width: 360px; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text); outline: none; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+    .search { flex: 1; max-width: 360px; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text); outline: none; transition: background .3s, border-color .3s, color .3s; }
     .search:focus { border-color: var(--accent); }
     .session-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
-    .session-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; transition: border-color .15s; }
+    .session-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; transition: border-color .15s, background .3s; }
     .session-card:hover { border-color: var(--accent); }
     .session-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .session-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap; }
@@ -61,17 +77,19 @@
     .error-box { background: rgba(248,81,73,0.1); border: 1px solid var(--danger); color: var(--danger-hover); padding: 16px; border-radius: var(--radius); margin: 20px; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; }
     .modal-overlay.open { display: flex; }
-    .modal { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); width: 400px; max-width: 90%; padding: 20px; box-shadow: var(--shadow); }
+    .modal { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); width: 400px; max-width: 90%; padding: 20px; box-shadow: var(--shadow); transition: background .3s, border-color .3s; }
     .modal h3 { margin: 0 0 16px; font-size: 16px; }
     .modal-body { display: flex; flex-direction: column; gap: 12px; }
-    .input { padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; }
+    .input { padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; transition: background .3s, border-color .3s, color .3s; }
     .input:focus { border-color: var(--accent); }
     .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-    .move-select { padding: 6px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; font-size: 13px; }
+    .move-select { padding: 6px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; font-size: 13px; transition: background .3s, border-color .3s, color .3s; }
     .back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; }
     .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-wrap { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--text-muted); }
+    #theme-toggle { position: fixed; top: 16px; right: 16px; z-index: 9999; width: 36px; height: 36px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .3s, border-color .3s, color .3s; }
+    #theme-toggle:hover { background: var(--bg-hover); }
   </style>
 </head>
 <body>
@@ -118,25 +136,44 @@
   </div>
 
   <script>
+    // Theme handling
+    const urlParams = new URLSearchParams(window.location.search);
+    const authToken = urlParams.get('token') || '';
+    let currentTheme = urlParams.get('theme') || localStorage.getItem('kimi-folders-theme') || 'dark';
+
+    function applyTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('kimi-folders-theme', t);
+      if (themeBtn) themeBtn.textContent = t === 'dark' ? '☀️' : '🌙';
+    }
+
+    applyTheme(currentTheme);
+
+    const themeBtn = document.createElement('button');
+    themeBtn.id = 'theme-toggle';
+    themeBtn.title = '切换主题';
+    themeBtn.onclick = () => {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(currentTheme);
+    };
+    document.body.appendChild(themeBtn);
+    applyTheme(currentTheme);
+
+    // Fix back-link to carry token
+    const backLink = document.getElementById('back-link');
+    if (backLink && authToken) {
+      let backUrl = './';
+      const backTheme = urlParams.get('theme');
+      if (backTheme) backUrl += '?theme=' + encodeURIComponent(backTheme);
+      if (authToken) backUrl += (backUrl.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(authToken);
+      backLink.href = backUrl;
+    }
+
     // State
     let folders = [];
     let sessions = [];
     let activeFolderId = null; // null = all, "" = unfiled
     let editingFolderId = null;
-
-    // Auth token support: read from current URL query param (same as main app)
-    const urlParams = new URLSearchParams(window.location.search);
-    const authToken = urlParams.get('token') || '';
-
-    // Fix back-link to carry token
-    const backLink = document.getElementById('back-link');
-    if (backLink && authToken) backLink.href = './?token=' + encodeURIComponent(authToken);
-
-    function buildUrl(path) {
-      if (!authToken) return path;
-      const sep = path.includes('?') ? '&' : '?';
-      return path + sep + 'token=' + encodeURIComponent(authToken);
-    }
 
     // DOM
     const folderListEl = document.getElementById('folder-list');
@@ -156,6 +193,12 @@
       const date = new Date(d);
       return date.toLocaleString('zh-CN');
     };
+
+    function buildUrl(path) {
+      if (!authToken) return path;
+      const sep = path.includes('?') ? '&' : '?';
+      return path + sep + 'token=' + encodeURIComponent(authToken);
+    }
 
     async function api(path, opts = {}) {
       const url = buildUrl(path);
@@ -207,7 +250,6 @@
 
     // Render folders sidebar
     function renderFolders() {
-      // Compute counts
       const counts = {};
       for (const s of sessions) {
         const fid = s.folder_id || '';
@@ -215,18 +257,15 @@
       }
 
       let html = '';
-      // All sessions
       html += `<div class="folder-item ${activeFolderId === null ? 'active' : ''}" data-id="__all__">
         <span class="folder-name">📂 全部会话</span>
         <span class="folder-count">${sessions.length}</span>
       </div>`;
-      // Unfiled
       const unfiledCount = counts[''] || 0;
       html += `<div class="folder-item ${activeFolderId === '' ? 'active' : ''}" data-id="">
         <span class="folder-name">📄 未分类</span>
         <span class="folder-count">${unfiledCount}</span>
       </div>`;
-      // Folders
       for (const f of folders) {
         html += `<div class="folder-item ${activeFolderId === f.id ? 'active' : ''}" data-id="${f.id}">
           <span class="folder-name">📁 ${escapeHtml(f.name)}</span>
@@ -239,7 +278,6 @@
       }
       folderListEl.innerHTML = html;
 
-      // Click handlers
       folderListEl.querySelectorAll('.folder-item').forEach(el => {
         el.addEventListener('click', (e) => {
           if (e.target.closest('[data-action]')) return;
@@ -317,7 +355,6 @@
       html += '</div>';
       sessionListEl.innerHTML = html;
 
-      // Move handlers
       sessionListEl.querySelectorAll('.move-select').forEach(sel => {
         sel.addEventListener('change', async () => {
           const sid = sel.dataset.session;
