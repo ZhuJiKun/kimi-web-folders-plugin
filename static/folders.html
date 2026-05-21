@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>会话文件夹管理 - Kimi Code</title>
+  <link rel="icon" type="image/png" href="./logo.png" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-elevated: #161b22;
+      --bg-hover: #1f242c;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+      --danger: #f85149;
+      --danger-hover: #ff7b72;
+      --success: #3fb950;
+      --radius: 8px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .layout { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar { width: 280px; min-width: 280px; background: var(--bg-elevated); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .sidebar-header h2 { margin: 0; font-size: 16px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-hover); color: var(--text); cursor: pointer; font-size: 13px; transition: background .15s; }
+    .btn:hover { background: var(--border); }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; }
+    .folder-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .folder-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: var(--radius); cursor: pointer; gap: 8px; }
+    .folder-item:hover { background: var(--bg-hover); }
+    .folder-item.active { background: rgba(88,166,255,0.12); outline: 1px solid rgba(88,166,255,0.35); }
+    .folder-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+    .folder-count { font-size: 12px; color: var(--text-muted); background: var(--bg); padding: 2px 8px; border-radius: 999px; }
+    .folder-actions { display: none; gap: 4px; }
+    .folder-item:hover .folder-actions, .folder-item.active .folder-actions { display: flex; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .main-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .main-header h1 { margin: 0; font-size: 18px; }
+    .main-body { flex: 1; overflow-y: auto; padding: 20px; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .search { flex: 1; max-width: 360px; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text); outline: none; }
+    .search:focus { border-color: var(--accent); }
+    .session-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+    .session-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; transition: border-color .15s; }
+    .session-card:hover { border-color: var(--accent); }
+    .session-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .session-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap; }
+    .session-actions { display: flex; gap: 8px; margin-top: 4px; }
+    .empty { text-align: center; color: var(--text-muted); padding: 60px 20px; }
+    .error-box { background: rgba(248,81,73,0.1); border: 1px solid var(--danger); color: var(--danger-hover); padding: 16px; border-radius: var(--radius); margin: 20px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); width: 400px; max-width: 90%; padding: 20px; box-shadow: var(--shadow); }
+    .modal h3 { margin: 0 0 16px; font-size: 16px; }
+    .modal-body { display: flex; flex-direction: column; gap: 12px; }
+    .input { padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; }
+    .input:focus { border-color: var(--accent); }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .move-select { padding: 6px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; font-size: 13px; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+    .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-wrap { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>📁 文件夹</h2>
+        <button class="btn btn-primary btn-sm" id="btn-new-folder">+ 新建</button>
+      </div>
+      <div class="folder-list" id="folder-list">
+        <div class="loading-wrap"><div class="spinner"></div> 加载中…</div>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="main-header">
+        <div>
+          <a class="back-link" href="./" id="back-link">← 返回 Kimi Code</a>
+          <h1 id="main-title">全部会话</h1>
+        </div>
+      </div>
+      <div class="main-body">
+        <div class="toolbar">
+          <input type="text" class="search" id="search-input" placeholder="搜索会话标题或工作目录…" />
+        </div>
+        <div id="session-list">
+          <div class="loading-wrap"><div class="spinner"></div> 加载中…</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: New/Edit Folder -->
+  <div class="modal-overlay" id="folder-modal">
+    <div class="modal">
+      <h3 id="modal-title">新建文件夹</h3>
+      <div class="modal-body">
+        <input type="text" class="input" id="folder-name-input" placeholder="文件夹名称" maxlength="100" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="modal-cancel">取消</button>
+        <button class="btn btn-primary" id="modal-confirm">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let folders = [];
+    let sessions = [];
+    let activeFolderId = null; // null = all, "" = unfiled
+    let editingFolderId = null;
+
+    // Auth token support: read from current URL query param (same as main app)
+    const urlParams = new URLSearchParams(window.location.search);
+    const authToken = urlParams.get('token') || '';
+
+    // Fix back-link to carry token
+    const backLink = document.getElementById('back-link');
+    if (backLink && authToken) backLink.href = './?token=' + encodeURIComponent(authToken);
+
+    function buildUrl(path) {
+      if (!authToken) return path;
+      const sep = path.includes('?') ? '&' : '?';
+      return path + sep + 'token=' + encodeURIComponent(authToken);
+    }
+
+    // DOM
+    const folderListEl = document.getElementById('folder-list');
+    const sessionListEl = document.getElementById('session-list');
+    const mainTitleEl = document.getElementById('main-title');
+    const searchInput = document.getElementById('search-input');
+    const modal = document.getElementById('folder-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const folderNameInput = document.getElementById('folder-name-input');
+    const btnNewFolder = document.getElementById('btn-new-folder');
+    const btnModalCancel = document.getElementById('modal-cancel');
+    const btnModalConfirm = document.getElementById('modal-confirm');
+
+    // Helpers
+    const fmtDate = (d) => {
+      if (!d) return '';
+      const date = new Date(d);
+      return date.toLocaleString('zh-CN');
+    };
+
+    async function api(path, opts = {}) {
+      const url = buildUrl(path);
+      const headers = {};
+      if (opts.body && typeof opts.body === 'string') {
+        headers['Content-Type'] = 'application/json';
+      }
+      if (authToken) {
+        headers['Authorization'] = 'Bearer ' + authToken;
+      }
+      const res = await fetch(url, { headers, ...opts });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status}: ${text}`);
+      }
+      if (res.status === 204) return null;
+      return res.json();
+    }
+
+    function showError(el, err) {
+      console.error(err);
+      el.innerHTML = `<div class="error-box">加载失败: ${escapeHtml(err.message || String(err))}<br/><button class="btn btn-sm" onclick="location.reload()" style="margin-top:8px">刷新重试</button></div>`;
+    }
+
+    // Load data
+    async function loadFolders() {
+      try {
+        folders = await api('/api/folders/');
+        renderFolders();
+      } catch (e) {
+        showError(folderListEl, e);
+        folders = [];
+      }
+    }
+
+    async function loadSessions() {
+      try {
+        let url = '/api/sessions/?limit=500';
+        if (activeFolderId !== null) url += `&folder_id=${encodeURIComponent(activeFolderId)}`;
+        const q = searchInput.value.trim();
+        if (q) url += `&q=${encodeURIComponent(q)}`;
+        sessions = await api(url);
+        renderSessions();
+      } catch (e) {
+        showError(sessionListEl, e);
+        sessions = [];
+      }
+    }
+
+    // Render folders sidebar
+    function renderFolders() {
+      // Compute counts
+      const counts = {};
+      for (const s of sessions) {
+        const fid = s.folder_id || '';
+        counts[fid] = (counts[fid] || 0) + 1;
+      }
+
+      let html = '';
+      // All sessions
+      html += `<div class="folder-item ${activeFolderId === null ? 'active' : ''}" data-id="__all__">
+        <span class="folder-name">📂 全部会话</span>
+        <span class="folder-count">${sessions.length}</span>
+      </div>`;
+      // Unfiled
+      const unfiledCount = counts[''] || 0;
+      html += `<div class="folder-item ${activeFolderId === '' ? 'active' : ''}" data-id="">
+        <span class="folder-name">📄 未分类</span>
+        <span class="folder-count">${unfiledCount}</span>
+      </div>`;
+      // Folders
+      for (const f of folders) {
+        html += `<div class="folder-item ${activeFolderId === f.id ? 'active' : ''}" data-id="${f.id}">
+          <span class="folder-name">📁 ${escapeHtml(f.name)}</span>
+          <span class="folder-count">${counts[f.id] || 0}</span>
+          <div class="folder-actions">
+            <button class="btn btn-sm" data-action="edit" data-folder="${f.id}">✏️</button>
+            <button class="btn btn-sm btn-danger" data-action="delete" data-folder="${f.id}">🗑️</button>
+          </div>
+        </div>`;
+      }
+      folderListEl.innerHTML = html;
+
+      // Click handlers
+      folderListEl.querySelectorAll('.folder-item').forEach(el => {
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('[data-action]')) return;
+          const id = el.dataset.id;
+          activeFolderId = id === '__all__' ? null : id;
+          renderFolders();
+          loadSessions();
+          updateTitle();
+        });
+      });
+      folderListEl.querySelectorAll('[data-action="edit"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const fid = btn.dataset.folder;
+          const f = folders.find(x => x.id === fid);
+          if (!f) return;
+          editingFolderId = fid;
+          modalTitle.textContent = '重命名文件夹';
+          folderNameInput.value = f.name;
+          openModal();
+        });
+      });
+      folderListEl.querySelectorAll('[data-action="delete"]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const fid = btn.dataset.folder;
+          const f = folders.find(x => x.id === fid);
+          if (!confirm(`确定删除文件夹 "${f?.name || ''}"？\n文件夹内的会话将变为未分类。`)) return;
+          try {
+            await api(`/api/folders/${fid}`, { method: 'DELETE' });
+            if (activeFolderId === fid) { activeFolderId = null; updateTitle(); }
+            await loadFolders();
+            await loadSessions();
+          } catch (err) {
+            alert('删除失败: ' + (err.message || err));
+          }
+        });
+      });
+    }
+
+    function updateTitle() {
+      if (activeFolderId === null) mainTitleEl.textContent = '全部会话';
+      else if (activeFolderId === '') mainTitleEl.textContent = '未分类会话';
+      else {
+        const f = folders.find(x => x.id === activeFolderId);
+        mainTitleEl.textContent = f ? `📁 ${f.name}` : '文件夹';
+      }
+    }
+
+    function renderSessions() {
+      if (!sessions.length) {
+        sessionListEl.innerHTML = `<div class="empty">暂无会话</div>`;
+        return;
+      }
+      let html = '<div class="session-grid">';
+      for (const s of sessions) {
+        const folderName = s.folder_id ? (folders.find(f => f.id === s.folder_id)?.name || '未知文件夹') : '未分类';
+        html += `<div class="session-card">
+          <div class="session-title">${escapeHtml(s.title || 'Untitled')}</div>
+          <div class="session-meta">
+            <span>📁 ${escapeHtml(folderName)}</span>
+            <span>📂 ${escapeHtml(s.work_dir || '')}</span>
+            <span>🕒 ${fmtDate(s.last_updated)}</span>
+          </div>
+          <div class="session-actions">
+            <select class="move-select" data-session="${s.session_id}">
+              <option value="__keep__">移动到…</option>
+              <option value="">📄 未分类</option>
+              ${folders.map(f => `<option value="${f.id}">📁 ${escapeHtml(f.name)}</option>`).join('')}
+            </select>
+            <a class="btn btn-sm" href="./?session=${s.session_id}${authToken ? '&token=' + encodeURIComponent(authToken) : ''}" target="_blank">打开会话</a>
+          </div>
+        </div>`;
+      }
+      html += '</div>';
+      sessionListEl.innerHTML = html;
+
+      // Move handlers
+      sessionListEl.querySelectorAll('.move-select').forEach(sel => {
+        sel.addEventListener('change', async () => {
+          const sid = sel.dataset.session;
+          const fid = sel.value;
+          if (fid === '__keep__') return;
+          try {
+            await moveSession(sid, fid);
+            sel.value = '__keep__';
+          } catch (err) {
+            alert('移动失败: ' + (err.message || err));
+            sel.value = '__keep__';
+          }
+        });
+      });
+    }
+
+    async function moveSession(sessionId, folderId) {
+      await api(`/api/sessions/${sessionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ folder_id: folderId })
+      });
+      await loadFolders();
+      await loadSessions();
+    }
+
+    // Search
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(loadSessions, 250);
+    });
+
+    // Modal
+    function openModal() { modal.classList.add('open'); folderNameInput.focus(); }
+    function closeModal() { modal.classList.remove('open'); editingFolderId = null; folderNameInput.value = ''; }
+    btnNewFolder.addEventListener('click', () => { modalTitle.textContent = '新建文件夹'; editingFolderId = null; openModal(); });
+    btnModalCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    btnModalConfirm.addEventListener('click', async () => {
+      const name = folderNameInput.value.trim();
+      if (!name) return;
+      try {
+        if (editingFolderId) {
+          await api(`/api/folders/${editingFolderId}`, { method: 'PATCH', body: JSON.stringify({ name }) });
+        } else {
+          await api('/api/folders/', { method: 'POST', body: JSON.stringify({ name }) });
+        }
+        closeModal();
+        await loadFolders();
+        renderFolders();
+      } catch (err) {
+        alert('保存失败: ' + (err.message || err));
+      }
+    });
+    folderNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnModalConfirm.click(); });
+
+    // Utils
+    function escapeHtml(t) {
+      const div = document.createElement('div');
+      div.textContent = t;
+      return div.innerHTML;
+    }
+
+    // Init
+    async function init() {
+      await loadFolders();
+      await loadSessions();
+      updateTitle();
+    }
+    init();
+  </script>
+</body>
+</html>
