@@ -167,6 +167,7 @@
     // State
     let folders = [];
     let sessions = [];
+    let allSessions = []; // all non-archived sessions for folder counting
     let activeFolderId = null; // null = all, "" = unfiled
     let editingFolderId = null;
 
@@ -229,6 +230,15 @@
       }
     }
 
+    async function loadAllSessions() {
+      try {
+        allSessions = await api('/api/sessions/?limit=500');
+        renderFolders();
+      } catch (e) {
+        allSessions = [];
+      }
+    }
+
     async function loadSessions() {
       try {
         let url = '/api/sessions/?limit=500';
@@ -246,7 +256,7 @@
     // Render folders sidebar
     function renderFolders() {
       const counts = {};
-      for (const s of sessions) {
+      for (const s of allSessions) {
         const fid = s.folder_id || '';
         counts[fid] = (counts[fid] || 0) + 1;
       }
@@ -254,11 +264,11 @@
       let html = '';
       html += `<div class="folder-item ${activeFolderId === null ? 'active' : ''}" data-id="__all__">
         <span class="folder-name">📂 全部会话</span>
-        <span class="folder-count">${sessions.length}</span>
+        <span class="folder-count">${allSessions.length}</span>
       </div>`;
       const unfiledCount = counts[''] || 0;
       html += `<div class="folder-item ${activeFolderId === '' ? 'active' : ''}" data-id="">
-        <span class="folder-name">📄 未分类</span>
+        <span class="folder-name">📁 未分类</span>
         <span class="folder-count">${unfiledCount}</span>
       </div>`;
       for (const f of folders) {
@@ -371,8 +381,12 @@
         method: 'PATCH',
         body: JSON.stringify({ folder_id: folderId })
       });
+      // Update allSessions locally so counts stay correct without full reload
+      const s = allSessions.find(x => x.id === sessionId);
+      if (s) s.folder_id = folderId || null;
       await loadFolders();
       await loadSessions();
+      renderFolders();
     }
 
     // Search
@@ -416,6 +430,7 @@
     // Init
     async function init() {
       await loadFolders();
+      await loadAllSessions();
       await loadSessions();
       updateTitle();
     }
